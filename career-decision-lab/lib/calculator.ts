@@ -92,9 +92,9 @@ export function generateAbilityDescription(scores: DimensionScores): string {
   const sortedDims = Object.entries(scores)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 2)
-    .map(([dim]) => dim);
+    .map(([dim]) => dim) as Dimension[];
 
-  const dimNames: Record<string, string> = {
+  const dimNames: Record<Dimension, string> = {
     S: '结构化',
     A: '抽象逻辑',
     R: '风险承受',

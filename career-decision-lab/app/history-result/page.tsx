@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { ArrowLeft, Calendar, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { TestResult, DIMENSION_NAMES } from '@/types';
@@ -10,7 +9,7 @@ import { PATH_DESCRIPTIONS } from '@/data/paths';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
-export default function HistoryResultPage() {
+function HistoryResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [result, setResult] = useState<TestResult | null>(null);
@@ -56,13 +55,13 @@ export default function HistoryResultPage() {
       <div className="container mx-auto px-4 py-12 max-w-6xl">
         {/* Header */}
         <div className="mb-8">
-          <Link
+          <a
             href="/history"
             className="inline-flex items-center text-slate-600 hover:text-slate-900 mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             返回历史记录
-          </Link>
+          </a>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
             测试结果详情
           </h1>
@@ -218,14 +217,29 @@ export default function HistoryResultPage() {
 
         {/* Footer */}
         <div className="mt-8 text-center">
-          <Link
+          <a
             href="/"
             className="inline-flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-6 py-3 rounded-lg transition-colors"
           >
             重新测试
-          </Link>
+          </a>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function HistoryResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">加载中...</p>
+        </div>
+      </div>
+    }>
+      <HistoryResultContent />
+    </Suspense>
   );
 }

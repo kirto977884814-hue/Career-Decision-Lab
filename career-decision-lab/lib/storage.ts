@@ -1,5 +1,8 @@
 import { TestProgress, TestResult, STORAGE_KEYS } from '@/types';
 
+// Re-export TestResult for convenience
+export type { TestResult };
+
 // 保存测试进度
 export function saveProgress(progress: TestProgress): void {
   if (typeof window === 'undefined') return;

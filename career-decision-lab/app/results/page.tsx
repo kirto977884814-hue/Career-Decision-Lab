@@ -41,8 +41,8 @@ function ResultsContent() {
         return;
       }
 
-      const { userInfo, answers } = JSON.parse(decodeURIComponent(dataParam));
-      const testResult = generateTestResult(userInfo, answers);
+      const { userInfo, answers, conflictAnswers } = JSON.parse(decodeURIComponent(dataParam));
+      const testResult = generateTestResult(userInfo, answers, conflictAnswers);
 
       // Save to localStorage
       saveResult(testResult);
@@ -395,6 +395,13 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-2">匹配算法</h3>
                 <p>
                   本系统采用6维能力向量 + 加权矩阵模型。输出结果为阶段性路径建议，而非职业标签。建议在能力提升后重新测试。
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">冲突取舍题</h3>
+                <p>
+                  本系统包含4道关键取舍题，用于增强维度区分度。职业决策本质上是能力与偏好的取舍，而非单维度评分。
                 </p>
               </div>
 

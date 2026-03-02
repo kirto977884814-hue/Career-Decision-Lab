@@ -185,9 +185,12 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Radar Chart - Ability Structure */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-              能力结构概览
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              你的能力结构分布
             </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              以下为你当前能力向量的分布情况。本系统基于6个核心维度进行建模,能力结构决定阶段性路径匹配,而非职业标签。
+            </p>
             <ResponsiveContainer width="100%" aspect={1}>
               <RadarChart data={radarData}>
                 <PolarGrid stroke="#94a3b8" />
@@ -204,7 +207,7 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
               </RadarChart>
             </ResponsiveContainer>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-4 text-center">
-              各维度得分 (1-5分)
+              建议关注维度之间的差异,而非单一高分
             </p>
           </div>
 
@@ -213,7 +216,7 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
             <div className="flex items-center gap-2 mb-4">
               <Target className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                当前阶段优先路径
+                当前阶段更具优势的路径类型
               </h2>
             </div>
 
@@ -267,9 +270,12 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                未来可演化路径
+                潜在可演化方向
               </h2>
             </div>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+              除当前阶段路径外,你的能力结构在以下方向具备延展潜力。这不是转行建议,而是能力扩展路径。
+            </p>
 
             <div className="md:flex md:items-start md:gap-6">
               <div className="mb-4 md:mb-0">
@@ -298,12 +304,12 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
           <div className="flex items-center gap-2 mb-6">
             <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-              30天行动清单
+              30天结构化行动计划
             </h2>
           </div>
 
           <p className="text-slate-600 dark:text-slate-400 mb-6">
-            为 {primaryPathInfo.name} 方向定制的具体行动计划
+            方向只有在行动中才能验证。以下为基于当前路径生成的实践建议。
           </p>
 
           <div className="space-y-4">
@@ -360,7 +366,7 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
             className="w-full flex items-center justify-between text-left"
           >
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-              了解评估模型
+              模型说明
             </h2>
             {showModelExplanation ? (
               <ChevronUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />
@@ -388,8 +394,7 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
               <div>
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-2">匹配算法</h3>
                 <p>
-                  本工具使用加权矩阵模型，通过计算你的能力特征向量与各职业路径理想特征向量的相似度，得出匹配分数。
-                  所有路径的匹配分数经过归一化处理，转换为百分比形式。
+                  本系统采用6维能力向量 + 加权矩阵模型。输出结果为阶段性路径建议，而非职业标签。建议在能力提升后重新测试。
                 </p>
               </div>
 

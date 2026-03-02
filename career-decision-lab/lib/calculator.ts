@@ -1,18 +1,25 @@
 import { Dimension, DimensionScores, CareerPath, PathMatchResult, TestResult, UserInfo } from '@/types';
 import { PATH_VECTORS, PATH_NAMES, PATH_DESCRIPTIONS, calculatePathMatch, calculateMatchPercent } from '@/data/paths';
 import { ACTION_PLANS } from '@/data/actionPlans';
+import { QUESTIONS } from '@/data/questions';
 
-// 计算维度平均分
+// 计算维度平均分 (支持反向题)
 export function calculateDimensionScores(answers: Record<string, number>): DimensionScores {
   const scores: Record<string, number[]> = {
     S: [], A: [], R: [], E: [], X: [], C: []
   };
 
-  // 收集每个维度的所有答案
+  // 收集每个维度的所有答案，并处理反向题
   Object.entries(answers).forEach(([questionId, score]) => {
     const dimension = questionId.charAt(0) as Dimension;
     if (scores[dimension]) {
-      scores[dimension].push(score);
+      // 查找对应的题目配置
+      const question = QUESTIONS.find(q => q.id === questionId);
+
+      // 如果是反向题，转换分数 (6 - 原分数)
+      const finalScore = question?.reverse ? (6 - score) : score;
+
+      scores[dimension].push(finalScore);
     }
   });
 

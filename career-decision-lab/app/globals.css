@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* 隐藏 Next.js 开发工具菜单 (右下角的英文菜单) */
+#__next-build-viewer-indicator__,
+.__next-build-viewer-indicator__,
+[data-nextjs-dev-tools],
+[style*="position: fixed"][style*="inset: auto"],
+div[style*="position: fixed"][style*="z-index: 9999"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 隐藏右下角固定定位的所有可能元素 */
+body > div[style*="position: fixed"]:not([class]) {
+  display: none !important;
+}
+
+body > div[style*="bottom: 0"][style*="right: 0"] {
+  display: none !important;
+}

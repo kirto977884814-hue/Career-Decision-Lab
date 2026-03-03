@@ -1,15 +1,19 @@
 import { CareerPath, CareerPathInfo, DimensionScores } from '@/types';
 
 // 8种职业路径的特征向量 [S, A, R, E, X, C]
+// 设计原则：
+// 1. 权重范围 [-5, 5]，负值表示"排斥/不适合"
+// 2. 每条路径有明确的高权重维度（≥4）和低/负权重维度（≤2）
+// 3. 增加路径间的区分度，避免权重集中在相似区间
 export const PATH_VECTORS: Record<CareerPath, number[]> = {
-  stable: [3, 2, 0, 2, 3, 2],              // 稳定体制型
-  deepSpecialist: [3, 5, 2, 1, 3, 1],       // 专业深耕型
-  techApplication: [4, 4, 3, 1, 4, 1],      // 技术应用型
-  productStrategy: [5, 4, 3, 4, 3, 3],      // 产品策略型
-  growthOperation: [3, 2, 4, 4, 5, 2],      // 增长运营型
-  contentExpression: [2, 2, 3, 5, 3, 4],    // 内容表达型
-  educationSupport: [3, 2, 2, 4, 3, 5],     // 教育助人型
-  entrepreneurship: [4, 3, 5, 4, 5, 2]      // 创业探索型
+  stable: [3, 2, -5, 2, 3, 2],              // 稳定体制型：强排斥风险
+  deepSpecialist: [2, 5, -2, -4, 2, -2],    // 专业深耕型：超强调抽象，排斥结构、表达和共情
+  techApplication: [5, 5, 2, -4, 5, -4],    // 技术应用型：强调结构和逻辑，强排斥共情
+  productStrategy: [5, 4, 3, 5, 3, 2],      // 产品策略型：均衡型，强调结构、抽象、表达
+  growthOperation: [2, 2, 5, 4, 5, -2],     // 增长运营型：强调风险、执行、表达，排斥抽象
+  contentExpression: [-2, -2, 3, 5, 3, 5],  // 内容表达型：强调表达和共情，排斥结构和逻辑
+  educationSupport: [2, 1, -3, 5, 3, 5],    // 教育助人型：强调共情和表达，排斥风险和抽象
+  entrepreneurship: [4, 3, 5, 4, 5, -3]     // 创业探索型：强调风险、执行、结构，排斥共情
 };
 
 // 路径名称映射
@@ -92,19 +96,20 @@ export const PATH_DESCRIPTIONS: Record<CareerPath, Omit<CareerPathInfo, 'id'>> =
   }
 };
 
-// 计算用户与路径的匹配度 (使用余弦相似度)
+// 计算用户与路径的匹配度（混合算法）
+// v5.1 改进版：结合余弦相似度和核心维度匹配，解决"全正向量"问题
 export function calculatePathMatch(
   userScores: DimensionScores,
   pathVector: number[]
 ): number {
   const dimensions: (keyof DimensionScores)[] = ['S', 'A', 'R', 'E', 'X', 'C'];
 
-  // 计算点积
+  // ===== 第1部分：余弦相似度（占40%）=====
+  // 衡量整体方向的相似性
   const dot = dimensions.reduce((sum, dim, index) => {
     return sum + (userScores[dim] * pathVector[index]);
   }, 0);
 
-  // 计算向量长度
   const normUser = Math.sqrt(
     dimensions.reduce((sum, dim) => sum + userScores[dim] ** 2, 0)
   );
@@ -112,13 +117,52 @@ export function calculatePathMatch(
     pathVector.reduce((sum, val) => sum + val ** 2, 0)
   );
 
-  // 返回余弦相似度
-  return dot / (normUser * normPath);
+  const cosineSim = dot / (normUser * normPath);
+
+  // ===== 第2部分：核心维度匹配度（占60%）=====
+  // 只关注权重≥4的核心维度，衡量用户是否满足这些关键要求
+  let coreMatch = 0;
+  let coreCount = 0;
+
+  dimensions.forEach((dim, index) => {
+    const required = pathVector[index];
+    if (Math.abs(required) >= 4) { // 核心维度（包括强排斥维度）
+      const userScore = userScores[dim];
+
+      if (required > 0) {
+        // 正向要求：用户分数越高越好
+        // 计算差距：用户分数与期望的接近程度
+        const gap = Math.abs(userScore - required);
+        const matchScore = Math.max(0, 1 - gap / 5); // 差距为0时得1分，差距为5时得0分
+        coreMatch += matchScore;
+      } else {
+        // 负向要求（排斥）：用户分数越低越好
+        // required是负数，例如-5表示"风险承受度越低越好"
+        const expectedLow = 5 + required; // -5 → 0, -3 → 2
+        const gap = Math.abs(userScore - expectedLow);
+        const matchScore = Math.max(0, 1 - gap / 5);
+        coreMatch += matchScore;
+      }
+
+      coreCount++;
+    }
+  });
+
+  const coreScore = coreCount > 0 ? coreMatch / coreCount : 0.5;
+
+  // ===== 综合得分 =====
+  // 余弦相似度范围 [-1, 1] → 转换到 [0, 1]
+  const normalizedCosine = (cosineSim + 1) / 2;
+
+  // 混合：余弦相似度40% + 核心维度匹配60%
+  const finalScore = normalizedCosine * 0.4 + coreScore * 0.6;
+
+  return finalScore;
 }
 
 // 计算匹配度百分比
-export function calculateMatchPercent(cosineSim: number): number {
-  // 余弦相似度范围是 [-1, 1]，需要转换为 [0, 100]
-  // 公式: ((cosSim + 1) / 2) * 100
-  return Math.round(((cosineSim + 1) / 2) * 100);
+export function calculateMatchPercent(score: number): number {
+  // calculatePathMatch现在返回 [0, 1] 范围的混合得分
+  // 直接转换为百分比
+  return Math.round(score * 100);
 }

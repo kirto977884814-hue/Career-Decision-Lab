@@ -12,26 +12,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout 代码
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 设置 Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: 安装依赖
-        run: npm install
+      - name: Install dependencies
+        run: |
+          corepack enable
+          npm install -g npm@latest
+          npm install
 
-      - name: 构建静态网站
+      - name: Build
         run: npm run build
         env:
+          NODE_ENV: production
           DEPLOY_TARGET: github-pages
 
-      - name: 部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./out
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
+          force_orphan: true

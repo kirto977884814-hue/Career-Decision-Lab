@@ -26,6 +26,8 @@ jobs:
 
       - name: 构建静态网站
         run: npm run build
+        env:
+          DEPLOY_TARGET: github-pages
 
       - name: 部署到 GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

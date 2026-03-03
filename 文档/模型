@@ -1,244 +1,235 @@
+行，我直接给你一套**可落地、不会塌缩到某一类**的“底层模型重构版”，你让开发把旧的 scoring 全部替换成这一套即可。
 
-下面是**可直接用于开发的问卷设计文档（最终版）**。
+这套方案的目标很明确：
 
-已按：
-
-* Likert 量表
-* 维度映射
-* 反向题标注
-* 可直接计算平均值
-
-结构写清楚，便于你直接交给 Claude 或写进前端。
+* **不再出现“怎么选都是同一类”**
+* 输出更稳定、更可解释
+* 兼容你现有的 6 维问卷 + 8 条路径
+* 结果页还能解释“为什么是这个、为什么不是那个”
 
 ---
 
 # 职业决策实验室
 
-## 问卷模块设计文档 v2.1（面试级展示版）
+## 底层模型重构方案 v3.2（直接替换版）
+
+## 1）核心思路（防塌缩）
+
+我们用 **两段式评分**：
+
+1. **结构相似度**：用余弦相似度匹配“能力结构形状”
+2. **关键维度门槛 Gate**：每条路径都有2个关键维度，太低就降权，避免“全能路径”统治
+
+最终：
+[
+Final = CosSim(U, P) \times Gate(U, path)
+]
+
+同时：
+
+* 用户分数先归一化到 0~1
+* （可选）中心化，消除“总选4/5的人天然更高”的问题
 
 ---
 
-# 一、量表说明
+## 2）路径矩阵（8条，全新不塌缩版）
 
-所有题目使用 5 分 Likert 量表：
+顺序固定：`[S, A, R, E, X, C]`
 
-1 = 非常不同意
-2 = 比较不同意
-3 = 中立
-4 = 比较同意
-5 = 非常同意
-
----
-
-# 二、维度结构
-
-6 个核心维度：
-
-| 维度     | 代号 |
-| ------ | -- |
-| 结构化能力  | S  |
-| 抽象逻辑能力 | A  |
-| 风险承受度  | R  |
-| 表达倾向   | E  |
-| 执行抗压能力 | X  |
-| 共情能力   | C  |
-
-每个维度 4 题，共 24 题。
-
----
-
-# 三、题目清单（可直接用于开发）
-
----
-
-## 结构化能力（S）
-
-S1
-我习惯在行动前建立问题框架。
-
-S2
-面对复杂问题，我倾向拆解步骤而不是直接尝试。
-
-S3
-我更喜欢整理信息，而不是直接寻找结论。
-
-S4
-我擅长将混乱问题转化为清晰结构。
-
----
-
-## 抽象逻辑能力（A）
-
-A1
-我喜欢思考问题背后的底层逻辑。
-
-A2
-我对模型或理论体系感兴趣。
-
-A3
-我能较快理解抽象概念。
-
-A4
-我习惯从具体案例总结一般规律。
-
----
-
-## 风险承受度（R）
-
-R1
-我可以接受收入波动换取成长空间。
-
-R2
-面对不确定未来，我不会过度焦虑。
-
-R3
-我愿意尝试高风险但高回报的路径。
-
-R4
-我不排斥职业方向的多次调整。
-
----
-
-## 表达倾向（E）
-
-E1
-我愿意持续对外表达观点。
-
-E2
-我在群体讨论中通常较为主动。
-
-E3
-我享受说服或讲解他人的过程。
-
-E4
-我对频繁社交互动不排斥。
-
----
-
-## 执行抗压能力（X）
-
-X1
-在高压环境下，我仍能保持效率。
-
-X2
-我更倾向快速行动，而不是长时间思考。
-
-X3
-我可以接受重复性或高强度任务。
-
-X4
-我更关注结果，而不是过程的完美。
-
----
-
-## 共情能力（C）
-
-C1
-我能较敏锐察觉他人情绪变化。
-
-C2
-我在意他人的反馈与评价。
-
-C3
-我愿意长期陪伴他人成长。
-
-C4
-我对人际关系变化较敏感。
-
----
-
-# 四、维度计算规则
-
-每个维度取平均值：
-
-```javascript
-S = (S1 + S2 + S3 + S4) / 4
-A = (A1 + A2 + A3 + A4) / 4
-R = (R1 + R2 + R3 + R4) / 4
-E = (E1 + E2 + E3 + E4) / 4
-X = (X1 + X2 + X3 + X4) / 4
-C = (C1 + C2 + C3 + C4) / 4
+```ts
+export const PATHS = {
+  stable:            [5, 1, 1, 2, 5, 3], // 稳定体制型：结构+执行
+  deepSpecialist:    [5, 5, 1, 1, 3, 1], // 专业深耕型：结构+抽象
+  techApplication:   [3, 5, 2, 1, 5, 1], // 技术应用型：抽象+执行
+  productStrategy:   [5, 4, 2, 5, 2, 2], // 产品策略型：结构+表达（执行刻意不高）
+  growthOperation:   [2, 2, 5, 4, 5, 1], // 增长运营型：风险+执行+表达
+  contentExpression: [1, 2, 3, 5, 2, 5], // 内容表达型：表达+共情
+  educationSupport:  [4, 1, 1, 4, 2, 5], // 教育助人型：共情+表达（结构辅助）
+  entrepreneurship:  [2, 2, 5, 3, 5, 1], // 创业探索型：风险+执行（共情不作为核心）
+} as const;
 ```
 
-输出范围：1.0 – 5.0
+> 关键点：**产品策略型不再“又能扛压又能冒险又很能共情”**，创业型也不再“全能”。这样不会通吃。
 
 ---
 
-# 五、数据结构建议（用于开发）
+## 3）每条路径的关键维度 Gate 规则
 
-```javascript
-const dimensions = {
-  S: [],
-  A: [],
-  R: [],
-  E: [],
-  X: [],
-  C: []
+维度顺序：S=0,A=1,R=2,E=3,X=4,C=5
+
+* `keys`：两项关键维度（必须至少中等）
+* `veto`：一个否决维度（太低会再降一点）
+
+```ts
+export const GATE_RULES = {
+  stable:            { keys: ["S","X"], veto: null },
+  deepSpecialist:    { keys: ["A","S"], veto: "E"  },
+  techApplication:   { keys: ["A","X"], veto: "E"  },
+  productStrategy:   { keys: ["S","E"], veto: "A"  },
+  growthOperation:   { keys: ["X","R"], veto: "A"  },
+  contentExpression: { keys: ["E","C"], veto: "A"  },
+  educationSupport:  { keys: ["C","E"], veto: "R"  },
+  entrepreneurship:  { keys: ["R","X"], veto: "C"  },
+} as const;
+```
+
+---
+
+## 4）【直接可用】评分代码（TS/JS都能用）
+
+把你项目里原来的 `calculateScores / getTopPath` 全换成这个文件即可。
+
+### `model.ts`
+
+```ts
+// model.ts
+export type DimKey = "S" | "A" | "R" | "E" | "X" | "C";
+export const ORDER: DimKey[] = ["S","A","R","E","X","C"];
+
+export const PATHS = {
+  stable:            [5, 1, 1, 2, 5, 3],
+  deepSpecialist:    [5, 5, 1, 1, 3, 1],
+  techApplication:   [3, 5, 2, 1, 5, 1],
+  productStrategy:   [5, 4, 2, 5, 2, 2],
+  growthOperation:   [2, 2, 5, 4, 5, 1],
+  contentExpression: [1, 2, 3, 5, 2, 5],
+  educationSupport:  [4, 1, 1, 4, 2, 5],
+  entrepreneurship:  [2, 2, 5, 3, 5, 1],
+} as const;
+
+export const GATE_RULES = {
+  stable:            { keys: ["S","X"], veto: null as DimKey | null },
+  deepSpecialist:    { keys: ["A","S"], veto: "E" as DimKey },
+  techApplication:   { keys: ["A","X"], veto: "E" as DimKey },
+  productStrategy:   { keys: ["S","E"], veto: "A" as DimKey },
+  growthOperation:   { keys: ["X","R"], veto: "A" as DimKey },
+  contentExpression: { keys: ["E","C"], veto: "A" as DimKey },
+  educationSupport:  { keys: ["C","E"], veto: "R" as DimKey },
+  entrepreneurship:  { keys: ["R","X"], veto: "C" as DimKey },
+} as const;
+
+export type PathKey = keyof typeof PATHS;
+
+export type DimScores = Record<DimKey, number>; // 1~5
+
+const idx: Record<DimKey, number> = { S:0, A:1, R:2, E:3, X:4, C:5 };
+
+function normalize01(x: number): number {
+  // 1~5 -> 0~1
+  return (x - 1) / 4;
+}
+
+function mean(v: number[]): number {
+  return v.reduce((a,b)=>a+b,0) / v.length;
+}
+
+function norm(v: number[]): number {
+  return Math.sqrt(v.reduce((s,x)=>s+x*x,0));
+}
+
+function cosine(a: number[], b: number[]): number {
+  const dot = a.reduce((s,x,i)=>s + x*b[i], 0);
+  const na = norm(a);
+  const nb = norm(b);
+  return dot / (na*nb + 1e-9);
+}
+
+function gate(path: PathKey, u01: number[]): number {
+  const rule = GATE_RULES[path];
+  const k1 = u01[idx[rule.keys[0]]];
+  const k2 = u01[idx[rule.keys[1]]];
+  const kAvg = (k1 + k2) / 2;
+
+  // 门槛：关键维度太低就降权
+  let g = 1.0;
+  if (kAvg < 0.35) g = 0.55;      // <2.4
+  else if (kAvg < 0.45) g = 0.75; // <2.8
+
+  // 否决维度：极低再扣一点
+  if (rule.veto) {
+    const v = u01[idx[rule.veto]];
+    if (v < 0.25) g *= 0.85; // <2.0
+  }
+
+  return g;
+}
+
+export function rankPaths(dimScores: DimScores) {
+  // 1) 用户向量归一化
+  const u01 = ORDER.map(k => normalize01(dimScores[k])); // 0~1
+
+  // 2) 中心化（推荐开启：更防塌缩）
+  const m = mean(u01);
+  const u = u01.map(x => x - m);
+
+  // 3) 逐路径算分
+  const rows = (Object.keys(PATHS) as PathKey[]).map((key) => {
+    const p = PATHS[key].slice(); // 0~5
+    const sim = cosine(u, p);
+    const g = gate(key, u01);
+    const final = sim * g;
+    return { key, sim, gate: g, final };
+  });
+
+  // 4) 排序
+  rows.sort((a,b)=> b.final - a.final);
+
+  // 5) 输出相对匹配度（0~100），避免“匹配度很低”困扰
+  const max = rows[0].final;
+  const min = rows[rows.length - 1].final;
+  const withPercent = rows.map(r => ({
+    ...r,
+    percent: Math.round(((r.final - min) / (max - min + 1e-9)) * 100),
+  }));
+
+  return {
+    u01,               // 0~1 的原始归一化，给结果页解释用
+    ranked: withPercent,
+    top1: withPercent[0],
+    top2: withPercent[1],
+    bottom2: withPercent.slice(-2),
+  };
 }
 ```
 
-题目示例结构：
+---
 
-```javascript
-{
-  id: "S1",
-  dimension: "S",
-  text: "我习惯在行动前建立问题框架。",
-  reverse: false
-}
-```
+## 5）结果页需要的新字段（给开发）
 
-（当前版本无反向题，若后续升级可加入）
+你之前只显示 Top1 文案，现在要显示“为什么它赢”。
+
+`rankPaths()` 已经返回这些，直接渲染即可：
+
+* `u01`：用户6维归一化分（0~1），可换算回 1~5 给雷达图
+* `top1 / top2 / bottom2`
+* `ranked`：完整8类排序 + percent
 
 ---
 
-# 六、路径向量（用于匹配）
+## 6）验收用例（必须跑，不跑一定会再塌）
 
-```javascript
-const paths = {
-  stable: [3,2,0,2,3,2],
-  deepSpecialist: [3,5,2,1,3,1],
-  techApplication: [4,4,3,1,4,1],
-  productStrategy: [5,4,3,4,3,3],
-  growthOperation: [3,2,4,4,5,2],
-  contentExpression: [2,2,3,5,3,4],
-  educationSupport: [3,2,2,4,3,5],
-  entrepreneurship: [4,3,5,4,5,2]
-}
-```
+让开发在控制台跑 8 组极端画像（直接写死 dimScores 测）：
 
-顺序必须对应：
+* 高结构+高执行、低风险：应偏 stable
+* 高抽象+高结构、低表达：应偏 deepSpecialist
+* 高抽象+高执行：应偏 techApplication
+* 高结构+高表达：应偏 productStrategy
+* 高风险+高执行：应偏 entrepreneurship / growthOperation
+* 高表达+高共情：应偏 contentExpression / educationSupport
+* 高共情+高表达、低风险：应偏 educationSupport
 
-[S, A, R, E, X, C]
+如果这些都能分散输出，说明模型底层已经稳了。
 
 ---
 
-# 七、匹配计算逻辑
+# 你现在要怎么推进最快
 
-```javascript
-function calculateScore(userVector, pathVector) {
-  return userVector.reduce((sum, val, index) => {
-    return sum + val * pathVector[index];
-  }, 0);
-}
-```
+你把上面的 `model.ts` 交给开发，让他做三件事：
 
-对8个路径全部计算。
-
-排序。
+1. 把原来的评分函数全部替换为 `rankPaths(dimScores)`
+2. 结果页 Top1/Top2/Bottom2 用返回值渲染
+3. 控制台 `console.table(ranked)`（先调试）确认不再“一直同一类”
 
 ---
 
-# 八、输出逻辑
-
-* 得分最高 → 当前优先路径
-* 第二高 → 可演化路径
-* 最低两个 → 当前不优先路径
-
-
-
-* 使用多维能力向量而非简单分类
-* 采用加权矩阵模型
-* 维度均衡处理（取平均避免题量偏差）
-* 输出阶段性路径而非终极职业
-
+如果你愿意，我还可以把**路径解释模板/行动清单**也改成与这版模型一致的 JSON 配置文件，让你前端完全“配置驱动”。

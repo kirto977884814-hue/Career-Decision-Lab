@@ -25,6 +25,9 @@ import { TestResult, DIMENSION_NAMES } from '@/types';
 import { ACTION_PLANS } from '@/data/actionPlans';
 import { PATH_DESCRIPTIONS } from '@/data/paths';
 import { PATH_DETAILS } from '@/data/pathDetails';
+import { buildPathExplanation, PathExplanation } from '@/lib/explain';
+import { compareTopPaths } from '@/lib/compare';
+import { buildNarrative } from '@/lib/narrative';
 
 function ResultsContent() {
   const router = useRouter();
@@ -300,6 +303,185 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
             </div>
           </div>
         </div>
+
+        {/* 新增模块1：能力拆解表 */}
+        {(() => {
+          const explanation = buildPathExplanation({
+            path: result.primaryPath.pathId,
+            userScores: result.dimensionScores
+          });
+
+          return (
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-8">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
+                能力匹配拆解表
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                以下是该路径对你的6维能力要求与你当前水平的详细对比
+              </p>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <th className="text-left py-3 px-4 font-semibold text-slate-900 dark:text-white">维度</th>
+                      <th className="text-center py-3 px-4 font-semibold text-slate-900 dark:text-white">路径要求</th>
+                      <th className="text-center py-3 px-4 font-semibold text-slate-900 dark:text-white">你的水平</th>
+                      <th className="text-center py-3 px-4 font-semibold text-slate-900 dark:text-white">状态</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-900 dark:text-white">解读</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {explanation.breakdown.map((item) => {
+                      const statusColors = {
+                        '优势': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+                        '可用': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                        '差距': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+                        '非核心': 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                      };
+                      const weightLabels = {
+                        5: '核心 - 高要求',
+                        4: '核心 - 较高要求',
+                        3: '一般要求',
+                        2: '次要要求',
+                        1: '次要要求',
+                        0: '非核心'
+                      };
+                      return (
+                        <tr key={item.key} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                          <td className="py-3 px-4 font-medium text-slate-900 dark:text-white">{item.name}</td>
+                          <td className="py-3 px-4 text-center text-slate-600 dark:text-slate-400">
+                            {weightLabels[item.requiredWeight as keyof typeof weightLabels]}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="text-slate-900 dark:text-white font-medium">{item.you}</span>
+                            <span className="text-slate-500 dark:text-slate-400 ml-1">({item.youLevel})</span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${statusColors[item.status as keyof typeof statusColors]}`}>
+                              {item.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-400 text-xs">{item.note}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* 新增模块2：差距优先级分析 */}
+        {(() => {
+          const explanation = buildPathExplanation({
+            path: result.primaryPath.pathId,
+            userScores: result.dimensionScores
+          });
+
+          if (explanation.topGaps.length === 0) {
+            return null;
+          }
+
+          return (
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-6 rounded-xl border-2 border-amber-200 dark:border-amber-800 mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                  优先补强能力（Top {explanation.topGaps.length}）
+                </h2>
+              </div>
+
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                以下维度是该路径的核心要求，但你当前水平有待提升。建议优先补强这些维度。
+              </p>
+
+              <div className="space-y-4">
+                {explanation.topGaps.map((gap, index) => (
+                  <div key={index} className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                        <span className="text-amber-700 dark:text-amber-300 font-bold text-sm">{index + 1}</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">{gap.name}</h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{gap.why}</p>
+
+                        <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3">
+                          <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">提升建议：</p>
+                          <ul className="space-y-1">
+                            {gap.improve.map((suggestion, idx) => (
+                              <li key={idx} className="text-xs text-slate-600 dark:text-slate-400 flex items-start gap-2">
+                                <span className="text-amber-600 dark:text-amber-400">•</span>
+                                <span>{suggestion}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* 新增模块3：Top1 vs Top2 对比 */}
+        {result.evolvablePath && (() => {
+          const comparison = compareTopPaths(
+            result.dimensionScores,
+            result.primaryPath.pathId,
+            result.evolvablePath.pathId
+          );
+
+          return (
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-8">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
+                为什么当前推荐「{PATH_DESCRIPTIONS[result.primaryPath.pathId].name}」而非「{PATH_DESCRIPTIONS[result.evolvablePath.pathId].name}」
+              </h2>
+
+              <p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-6">
+                {comparison.text}
+              </p>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {comparison.keyDiffs.map((diff, index) => (
+                  <div key={index} className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-slate-900 dark:text-white">{diff.dimName}</span>
+                      <span className={`text-sm px-2 py-1 rounded ${
+                        diff.more === result.primaryPath.pathId
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                          : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                      }`}>
+                        {diff.more === result.primaryPath.pathId
+                          ? PATH_DESCRIPTIONS[result.primaryPath.pathId].name
+                          : PATH_DESCRIPTIONS[result.evolvablePath!.pathId].name}
+                        {' '}更看重
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex-1">
+                        <span className="text-slate-600 dark:text-slate-400">权重差：</span>
+                        <span className="font-medium text-slate-900 dark:text-white ml-1">
+                          {Math.abs(diff.weightDiff)}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <span className="text-slate-600 dark:text-slate-400">你的分数：</span>
+                        <span className="font-medium text-slate-900 dark:text-white ml-1">
+                          {diff.you}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Evolvable Path */}
         {evolvablePathInfo && (

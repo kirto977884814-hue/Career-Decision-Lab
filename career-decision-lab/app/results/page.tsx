@@ -431,7 +431,7 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
               <div>
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-2">匹配算法</h3>
                 <p>
-                  本系统采用6维能力向量 + 加权矩阵模型。输出结果为阶段性路径建议，而非职业标签。建议在能力提升后重新测试。
+                  本系统采用6维能力向量 + 余弦相似度模型，计算能力结构相似度而非能力加权和。输出结果为阶段性路径建议，而非职业标签。建议在能力提升后重新测试。
                 </p>
               </div>
 

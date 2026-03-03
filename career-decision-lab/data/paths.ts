@@ -92,21 +92,33 @@ export const PATH_DESCRIPTIONS: Record<CareerPath, Omit<CareerPathInfo, 'id'>> =
   }
 };
 
-// 计算用户与路径的匹配度
+// 计算用户与路径的匹配度 (使用余弦相似度)
 export function calculatePathMatch(
   userScores: DimensionScores,
   pathVector: number[]
 ): number {
   const dimensions: (keyof DimensionScores)[] = ['S', 'A', 'R', 'E', 'X', 'C'];
 
-  return dimensions.reduce((sum, dim, index) => {
+  // 计算点积
+  const dot = dimensions.reduce((sum, dim, index) => {
     return sum + (userScores[dim] * pathVector[index]);
   }, 0);
+
+  // 计算向量长度
+  const normUser = Math.sqrt(
+    dimensions.reduce((sum, dim) => sum + userScores[dim] ** 2, 0)
+  );
+  const normPath = Math.sqrt(
+    pathVector.reduce((sum, val) => sum + val ** 2, 0)
+  );
+
+  // 返回余弦相似度
+  return dot / (normUser * normPath);
 }
 
 // 计算匹配度百分比
-export function calculateMatchPercent(score: number): number {
-  // 理论最高分: 5(最高维度分) * 5(最高向量值) * 6(6个维度) = 150
-  const maxScore = 150;
-  return Math.round((score / maxScore) * 100);
+export function calculateMatchPercent(cosineSim: number): number {
+  // 余弦相似度范围是 [-1, 1]，需要转换为 [0, 100]
+  // 公式: ((cosSim + 1) / 2) * 100
+  return Math.round(((cosineSim + 1) / 2) * 100);
 }

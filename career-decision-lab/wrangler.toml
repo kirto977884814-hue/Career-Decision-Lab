@@ -1,0 +1,21 @@
+{
+  "$schema": "https://developers.cloudflare.com/pages/platform/schemas-config.json",
+  "build": {
+    "command": "npm run build",
+    "destination": "out"
+  },
+  "build_environment": {
+    "NODE_ENV": "production",
+    "DEPLOY_TARGET": "cloudflare",
+    "NPM_FLAGS": "--legacy-peer-deps"
+  },
+  "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    {
+      "pattern": "/",
+      "custom_headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      }
+    }
+  ]
+}

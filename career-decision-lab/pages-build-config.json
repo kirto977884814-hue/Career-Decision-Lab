@@ -2,8 +2,8 @@
 # 更多信息：https://developers.cloudflare.com/pages/functions/build-configuration/
 
 [build]
-  # 构建命令
-  command = "export DEPLOY_TARGET=cloudflare && npm run build"
+  # 构建命令（简化版本，环境变量在 Cloudflare UI 中设置）
+  command = "npm run build"
 
   # 构建输出目录
   publish = "out"
@@ -12,6 +12,7 @@
   [build.environment]
   NODE_ENV = "production"
   DEPLOY_TARGET = "cloudflare"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 # 重定向规则（SPA 路由支持）
 [[redirects]]

@@ -1,6 +1,7 @@
 [build]
+  base = "career-decision-lab/"
   command = "export DEPLOY_TARGET=netlify && npm run build"
-  publish = "out"
+  publish = "career-decision-lab/out"
 
 [build.environment]
   NODE_ENV = "production"

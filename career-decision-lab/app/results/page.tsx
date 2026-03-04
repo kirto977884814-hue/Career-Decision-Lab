@@ -28,6 +28,16 @@ import { PATH_DETAILS } from '@/data/pathDetails';
 import { buildPathExplanation, PathExplanation } from '@/lib/explain';
 import { compareTopPaths } from '@/lib/compare';
 import { buildNarrative } from '@/lib/narrative';
+import {
+  generatePersonalizedSummary,
+  generateConfusionBasedAdvice
+} from '@/lib/personalize';
+import {
+  generatePersonalizedActionPlan,
+  generateGradePriorityTag,
+  addAbilityBasedTasks
+} from '@/lib/dynamicActionPlan';
+import { PersonalizedSummaryCard } from '@/components/PersonalizedSummaryCard';
 
 function ResultsContent() {
   const router = useRouter();
@@ -185,6 +195,15 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
             )}
           </button>
         </div>
+
+        {/* 个性化摘要卡片 */}
+        {result.userInfo && (
+          <PersonalizedSummaryCard
+            userInfo={result.userInfo}
+            dimensionScores={result.dimensionScores}
+            recommendedPath={result.primaryPath.pathId}
+          />
+        )}
 
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Radar Chart - Ability Structure */}

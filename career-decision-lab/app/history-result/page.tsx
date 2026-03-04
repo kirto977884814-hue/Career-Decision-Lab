@@ -13,6 +13,7 @@ import { zhCN } from 'date-fns/locale';
 import { buildPathExplanation } from '@/lib/explain';
 import { compareTopPaths } from '@/lib/compare';
 import { generateGapAnalysis } from '@/lib/calculator';
+import { PersonalizedSummaryCard } from '@/components/PersonalizedSummaryCard';
 
 function HistoryResultContent() {
   const router = useRouter();
@@ -167,6 +168,15 @@ ${result.evolvablePath ? `📈 潜在演化路径：${PATH_DESCRIPTIONS[result.e
             )}
           </button>
         </div>
+
+        {/* 个性化摘要卡片 */}
+        {result.userInfo && (
+          <PersonalizedSummaryCard
+            userInfo={result.userInfo}
+            dimensionScores={result.dimensionScores}
+            recommendedPath={result.primaryPath.pathId}
+          />
+        )}
 
         <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Radar Chart */}

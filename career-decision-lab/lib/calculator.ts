@@ -3,6 +3,7 @@ import { PATH_VECTORS, PATH_NAMES, PATH_DESCRIPTIONS, calculatePathMatch, calcul
 import { ACTION_PLANS } from '@/data/actionPlans';
 import { QUESTIONS, CONFLICT_QUESTIONS } from '@/data/questions';
 import { PATH_DETAILS } from '@/data/pathDetails';
+import { generatePersonalizedActionPlan, addAbilityBasedTasks } from '@/lib/dynamicActionPlan';
 
 // 计算维度平均分 (支持反向题)
 export function calculateDimensionScores(answers: Record<string, number>): DimensionScores {
@@ -96,8 +97,18 @@ export function generateTestResult(
   // 6. 不优先路径(得分最低的两个)
   const notPriorityPaths = pathMatches.slice(-2);
 
-  // 7. 30天行动清单
-  const actionPlan = ACTION_PLANS[primaryPath.pathId];
+  // 7. 生成个性化30天行动清单（根据用户信息定制）
+  let personalizedActionPlan = generatePersonalizedActionPlan(
+    userInfo,
+    primaryPath.pathId,
+    dimensionScores
+  );
+
+  // 8. 根据能力得分添加额外提升任务
+  personalizedActionPlan = addAbilityBasedTasks(
+    personalizedActionPlan,
+    dimensionScores
+  );
 
   return {
     id: `test_${Date.now()}`,
@@ -107,7 +118,7 @@ export function generateTestResult(
     primaryPath,
     evolvablePath,
     notPriorityPaths,
-    actionPlan
+    actionPlan: personalizedActionPlan
   };
 }
 

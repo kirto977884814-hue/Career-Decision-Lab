@@ -9,6 +9,7 @@ import {
   TrendingUp,
   Lightbulb
 } from 'lucide-react';
+import QuestionnaireTip from '@/components/QuestionnaireTip';
 
 export default function WelcomePage() {
   return (
@@ -140,6 +141,11 @@ export default function WelcomePage() {
           <p className="text-slate-600 dark:text-slate-400 font-medium">
             预计用时 8-12 分钟 • 共47题 • 5个Section
           </p>
+
+          {/* 温馨提示 */}
+          <div className="max-w-2xl mx-auto">
+            <QuestionnaireTip variant="simple" animated={false} />
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Link

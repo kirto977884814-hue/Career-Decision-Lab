@@ -23,6 +23,7 @@ import {
   Lightbulb,
   ChevronRight
 } from 'lucide-react';
+import QuestionnaireTip from '@/components/QuestionnaireTip';
 import {
   BASIC_INFO_QUESTIONS,
   MOTIVATION_QUESTIONS,
@@ -49,8 +50,9 @@ export default function QuestionnaireV5Page() {
   const [dimensionAnswers, setDimensionAnswers] = useState<Record<string, { reality: number; ideal: number }>>({});
   const [scenarioAnswers, setScenarioAnswers] = useState<Record<string, string>>({});
   const [reflectionAnswers, setReflectionAnswers] = useState<Record<string, string>>({});
+  const [tipDismissed, setTipDismissed] = useState(false);
 
-  // 加载进度
+  // 加载进度和提示状态
   useEffect(() => {
     const progress = loadProgress() as TestProgress & {
       basicInfo?: Partial<UserInfo>;
@@ -58,6 +60,12 @@ export default function QuestionnaireV5Page() {
       scenarioAnswers?: Record<string, string>;
       reflectionAnswers?: Record<string, string>;
     };
+
+    // 检查是否已关闭过提示
+    const tipClosed = localStorage.getItem('questionnaire-tip-closed');
+    if (tipClosed === 'true') {
+      setTipDismissed(true);
+    }
 
     if (progress) {
       if (progress.basicInfo) {
@@ -120,6 +128,12 @@ export default function QuestionnaireV5Page() {
       basicInfo,
       userInfo: basicInfo as UserInfo
     } as any);
+  };
+
+  // 关闭温馨提示
+  const handleDismissTip = () => {
+    setTipDismissed(true);
+    localStorage.setItem('questionnaire-tip-closed', 'true');
   };
 
   // 提交问卷
@@ -582,6 +596,13 @@ export default function QuestionnaireV5Page() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             返回
           </button>
+
+          {/* 温馨提示 - 仅在基础信息第一题时显示 */}
+          {!tipDismissed && currentSection === 'basic' && currentQuestionIndex === 0 && (
+            <div className="mb-6">
+              <QuestionnaireTip variant="full" onDismiss={handleDismissTip} />
+            </div>
+          )}
 
           {/* Section进度条 */}
           <div className="mb-4">

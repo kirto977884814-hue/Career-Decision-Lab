@@ -75,14 +75,14 @@ export default function LighthouseIcon({
       <rect x="52" y="44" width="24" height="4" rx="1" fill="#172554" />
 
       {/* 光源 - 金黄色灯光 */}
-      <circle cx="64" cy="48" r="6" fill="#fbbf24" className={animated && 'animate-pulse'} />
+      <circle cx="64" cy="48" r="6" fill="#fbbf24" className={animated ? 'animate-pulse' : undefined} />
       <circle cx="64" cy="48" r="4" fill="#fcd34d" />
 
       {/* 光束 - 向右上方照射 */}
       <path
         d="M 68 46 L 128 10 L 128 30 L 68 66 Z"
         fill="url(#beamGradient)"
-        className={animated && 'animate-beam-sweep'}
+        className={animated ? 'animate-beam-sweep' : undefined}
       />
 
       {/* 灯塔窗户细节 */}

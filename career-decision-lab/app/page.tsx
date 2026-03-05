@@ -15,7 +15,7 @@ import {
   ChevronUp,
   Lightbulb as Lighthouse
 } from 'lucide-react';
-import LighthouseIcon from '@/components/LighthouseIcon';
+import LighthouseIcon, { LighthouseIconSmall } from '@/components/LighthouseIcon';
 import QuestionnaireTip from '@/components/QuestionnaireTip';
 
 export default function WelcomePage() {
@@ -208,7 +208,7 @@ export default function WelcomePage() {
             href="/questionnaire-v5"
             className="inline-flex items-center gap-3 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-slate-900 font-bold px-10 py-5 rounded-2xl transition-all shadow-xl hover:shadow-2xl hover:scale-105 text-xl"
           >
-            <LighthouseIcon className="w-6 h-6" />
+            <LighthouseIconSmall />
             开始测试
             <ArrowRight className="w-6 h-6" />
           </Link>

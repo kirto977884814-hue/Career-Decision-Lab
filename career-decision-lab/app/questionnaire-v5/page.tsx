@@ -23,6 +23,7 @@ import {
   Lightbulb,
   ChevronRight
 } from 'lucide-react';
+import { LighthouseIconSmall } from '@/components/LighthouseIcon';
 import QuestionnaireTip from '@/components/QuestionnaireTip';
 import {
   BASIC_INFO_QUESTIONS,
@@ -603,6 +604,14 @@ export default function QuestionnaireV5Page() {
               <QuestionnaireTip variant="full" onDismiss={handleDismissTip} />
             </div>
           )}
+
+          {/* 页面标题 */}
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <LighthouseIconSmall className="text-amber-400" />
+            <h1 className="text-2xl md:text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-400">
+              开始你的灯塔之旅
+            </h1>
+          </div>
 
           {/* Section进度条 */}
           <div className="mb-4">

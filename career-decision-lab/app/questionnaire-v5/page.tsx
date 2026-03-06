@@ -131,6 +131,33 @@ export default function QuestionnaireV5Page() {
     } as any);
   };
 
+  // 处理返回上一题
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    } else {
+      // 返回上一个section
+      const currentIndex = sections.findIndex(s => s.id === currentSection);
+      if (currentIndex > 0) {
+        const prevSection = sections[currentIndex - 1];
+        setCurrentSection(prevSection.id);
+        // 设置到上一个section的最后一题
+        if (prevSection.id === 'basic') {
+          setCurrentQuestionIndex(BASIC_INFO_QUESTIONS.length - 1);
+        } else if (prevSection.id === 'motivation') {
+          setCurrentQuestionIndex(MOTIVATION_QUESTIONS.length - 1);
+        } else if (prevSection.id === 'dimensions') {
+          const totalDimensionPages = 6 * 2; // 6个维度 × 2题
+          setCurrentQuestionIndex(totalDimensionPages - 1);
+        } else if (prevSection.id === 'scenarios') {
+          setCurrentQuestionIndex(SCENARIO_QUESTIONS.length - 1);
+        } else if (prevSection.id === 'reflection') {
+          setCurrentQuestionIndex(REFLECTION_QUESTIONS.length - 1);
+        }
+      }
+    }
+  };
+
   // 关闭温馨提示
   const handleDismissTip = () => {
     setTipDismissed(true);
@@ -259,8 +286,16 @@ export default function QuestionnaireV5Page() {
           </div>
         )}
 
-        {/* 下一步按钮 */}
-        <div className="mt-6 flex justify-end">
+        {/* 导航按钮 */}
+        <div className="mt-6 flex justify-between">
+          <button
+            onClick={handlePrevious}
+            disabled={currentSection === 'basic' && currentQuestionIndex === 0}
+            className="flex items-center gap-2 px-6 py-3 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-all disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed disabled:text-slate-500 font-medium"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            上一题
+          </button>
           <button
             onClick={() => {
               if (currentQuestionIndex < BASIC_INFO_QUESTIONS.length - 1) {
@@ -344,8 +379,15 @@ export default function QuestionnaireV5Page() {
           </div>
         )}
 
-        {/* 下一步按钮 */}
-        <div className="mt-6 flex justify-end">
+        {/* 导航按钮 */}
+        <div className="mt-6 flex justify-between">
+          <button
+            onClick={handlePrevious}
+            className="flex items-center gap-2 px-6 py-3 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-all font-medium"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            上一题
+          </button>
           <button
             onClick={() => {
               if (currentQuestionIndex < MOTIVATION_QUESTIONS.length - 1) {
@@ -489,6 +531,20 @@ export default function QuestionnaireV5Page() {
                 </button>
               ))}
             </div>
+
+            {/* 导航按钮 */}
+            <div className="mt-6 flex justify-between">
+              <button
+                onClick={handlePrevious}
+                className="flex items-center gap-2 px-6 py-3 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-all font-medium"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                上一题
+              </button>
+              <div className="text-sm text-blue-300">
+                选择选项后自动跳转
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -542,6 +598,20 @@ export default function QuestionnaireV5Page() {
             </button>
           ))}
         </div>
+
+        {/* 导航按钮 */}
+        <div className="mt-6 flex justify-between">
+          <button
+            onClick={handlePrevious}
+            className="flex items-center gap-2 px-6 py-3 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-all font-medium"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            上一题
+          </button>
+          <div className="text-sm text-blue-300">
+            选择选项后自动跳转
+          </div>
+        </div>
       </div>
     );
   };
@@ -572,8 +642,15 @@ export default function QuestionnaireV5Page() {
           onBlur={saveCurrentProgress}
         />
 
-        {/* 下一步按钮 */}
-        <div className="mt-6 flex justify-end">
+        {/* 导航按钮 */}
+        <div className="mt-6 flex justify-between">
+          <button
+            onClick={handlePrevious}
+            className="flex items-center gap-2 px-6 py-3 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-all font-medium"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            上一题
+          </button>
           <button
             onClick={() => {
               if (currentQuestionIndex < REFLECTION_QUESTIONS.length - 1) {

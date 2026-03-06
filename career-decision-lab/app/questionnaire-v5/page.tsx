@@ -378,8 +378,20 @@ export default function QuestionnaireV5Page() {
       { key: 'C', name: '共情能力' }
     ];
 
-    const currentDimension = dimensions[Math.floor(currentQuestionIndex / 2)];
+    const dimensionIndex = Math.floor(currentQuestionIndex / 2);
+    const currentDimension = dimensions[dimensionIndex];
     const isRealityQuestion = currentQuestionIndex % 2 === 0;
+
+    // 安全检查：确保 currentDimension 存在
+    if (!currentDimension) {
+      return (
+        <div className="bg-slate-800/50 backdrop-blur border-2 border-red-500/50 p-8 rounded-xl">
+          <p className="text-red-300 text-center">
+            加载题目时出错，请返回上一页重试
+          </p>
+        </div>
+      );
+    }
 
     // 找到当前维度的所有题目
     const dimensionQuestions = DIMENSION_QUESTIONS.filter(q => q.dimension === currentDimension.key);

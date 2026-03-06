@@ -467,7 +467,8 @@ export default function QuestionnaireV5Page() {
 
                     // 自动跳转到下一题
                     setTimeout(() => {
-                      if (currentQuestionIndex < DIMENSION_QUESTIONS.length - 1) {
+                      const totalDimensionPages = dimensions.length * 2; // 6个维度 × 2题 = 12页
+                      if (currentQuestionIndex < totalDimensionPages - 1) {
                         setCurrentQuestionIndex(currentQuestionIndex + 1);
                       } else {
                         setCurrentSection('scenarios');

@@ -192,21 +192,21 @@ export default function QuestionnaireV5Page() {
     const question = BASIC_INFO_QUESTIONS[currentQuestionIndex];
 
     return (
-      <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+      <div className="bg-slate-800/50 backdrop-blur border-2 border-amber-500/30 p-8 rounded-xl">
         <div className="mb-6">
-          <div className="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium rounded-full mb-4">
+          <div className="inline-block px-3 py-1 bg-amber-100/10 dark:bg-amber-900/30 text-amber-300 text-sm font-medium rounded-full mb-4">
             {currentQuestionIndex + 1} / {BASIC_INFO_QUESTIONS.length}
           </div>
-          <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white leading-relaxed">
+          <h2 className="text-xl md:text-2xl font-semibold text-white leading-relaxed">
             {question.text}
           </h2>
           {!question.required && (
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">（选填）</p>
+            <p className="text-sm text-blue-200 mt-2">（选填）</p>
           )}
         </div>
 
         {/* 选项 */}
-        {question.options ? (
+        {question.options && question.options.length > 0 ? (
           <div className="space-y-3">
             {question.options.map((option) => (
               <button
@@ -228,27 +228,35 @@ export default function QuestionnaireV5Page() {
                 }}
                 className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                   (basicInfo as any)[question.type] === option.value
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
+                    ? 'border-amber-500 bg-amber-900/20'
+                    : 'border-slate-600 hover:border-amber-400'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   {option.emoji && <span className="text-2xl">{option.emoji}</span>}
-                  <span className="font-medium text-slate-900 dark:text-white">{option.label}</span>
+                  <span className="font-medium text-white">{option.label}</span>
                 </div>
               </button>
             ))}
           </div>
         ) : (
-          <input
-            type="text"
-            className="w-full p-4 border-2 border-slate-200 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none dark:bg-slate-900 dark:text-white"
-            placeholder={question.text}
-            onChange={(e) => {
-              setBasicInfo({ ...basicInfo, [question.type]: e.target.value });
-            }}
-            onBlur={saveCurrentProgress}
-          />
+          <div>
+            <input
+              type="text"
+              className="w-full p-4 border-2 border-amber-500/30 rounded-lg focus:border-amber-400 focus:outline-none bg-slate-900/50 text-white placeholder-blue-300/50"
+              placeholder={question.type === 'major' ? '请输入你的专业名称' : question.text}
+              value={(basicInfo as any)[question.type] || ''}
+              onChange={(e) => {
+                setBasicInfo({ ...basicInfo, [question.type]: e.target.value });
+              }}
+              onBlur={saveCurrentProgress}
+            />
+            {question.type === 'major' && (
+              <p className="text-sm text-blue-300/70 mt-2">
+                💡 例如：计算机科学、工商管理、化学工程等
+              </p>
+            )}
+          </div>
         )}
 
         {/* 下一步按钮 */}
@@ -263,7 +271,7 @@ export default function QuestionnaireV5Page() {
               }
             }}
             disabled={question.required && !(basicInfo as any)[question.type]}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed font-medium"
           >
             下一步
             <ArrowRight className="w-5 h-5" />
@@ -278,16 +286,16 @@ export default function QuestionnaireV5Page() {
     const question = MOTIVATION_QUESTIONS[currentQuestionIndex];
 
     return (
-      <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+      <div className="bg-slate-800/50 backdrop-blur border-2 border-amber-500/30 p-8 rounded-xl">
         <div className="mb-6">
-          <div className="inline-block px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium rounded-full mb-4">
+          <div className="inline-block px-3 py-1 bg-amber-100/10 dark:bg-amber-900/30 text-amber-300 text-sm font-medium rounded-full mb-4">
             {currentQuestionIndex + 1} / {MOTIVATION_QUESTIONS.length}
           </div>
-          <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white leading-relaxed">
+          <h2 className="text-xl md:text-2xl font-semibold text-white leading-relaxed">
             {question.text}
           </h2>
           {question.required && (
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">*必填</p>
+            <p className="text-sm text-blue-200 mt-2">*必填</p>
           )}
         </div>
 
@@ -318,17 +326,17 @@ export default function QuestionnaireV5Page() {
                 className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                   Array.isArray(motivationAnswers[question.id])
                     ? (motivationAnswers[question.id] as string[]).includes(option.value)
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                      : 'border-slate-200 dark:border-slate-700'
+                      ? 'border-amber-500 bg-amber-900/20'
+                      : 'border-slate-600'
                     : motivationAnswers[question.id] === option.value
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                    : 'border-slate-200 dark:border-slate-700'
-                } hover:border-purple-300 dark:hover:border-purple-600`}
+                    ? 'border-amber-500 bg-amber-900/20'
+                    : 'border-slate-600'
+                } hover:border-amber-400`}
               >
                 <div className="flex items-start gap-3">
-                  <span className="font-medium text-slate-900 dark:text-white">{option.label}</span>
+                  <span className="font-medium text-white">{option.label}</span>
                   {option.description && (
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{option.description}</p>
+                    <p className="text-sm text-blue-200 mt-1">{option.description}</p>
                   )}
                 </div>
               </button>
@@ -348,7 +356,7 @@ export default function QuestionnaireV5Page() {
               }
             }}
             disabled={question.required && !motivationAnswers[question.id]}
-            className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed font-medium"
           >
             下一步
             <ArrowRight className="w-5 h-5" />
@@ -379,37 +387,37 @@ export default function QuestionnaireV5Page() {
     return (
       <div className="space-y-6">
         {/* 现实行为题 */}
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div className="bg-slate-800/50 backdrop-blur border-2 border-amber-500/30 p-8 rounded-xl">
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="inline-block px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-medium rounded-full">
+              <div className="inline-block px-3 py-1 bg-amber-100/10 dark:bg-amber-900/30 text-amber-300 text-sm font-medium rounded-full">
                 {currentDimension.key} 维度
               </div>
-              <span className="text-sm text-slate-600 dark:text-slate-400">
+              <span className="text-sm text-blue-200">
                 ({Math.floor(currentQuestionIndex / 2) + 1} / 6)
               </span>
             </div>
 
             {/* 现实行为题 */}
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-3">
+              <h3 className="text-lg font-semibold text-blue-300 mb-3">
                 现实行为
               </h3>
               {dimensionQuestions.filter(q => q.type === 'reality').slice(0, 1).map((q) => (
-                <div key={q.id} className="mb-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                  <p className="text-slate-900 dark:text-white">{q.text}</p>
+                <div key={q.id} className="mb-4 p-4 bg-slate-900/50 rounded-lg">
+                  <p className="text-white">{q.text}</p>
                 </div>
               ))}
             </div>
 
             {/* 真实意愿题 */}
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-3">
+              <h3 className="text-lg font-semibold text-amber-300 mb-3">
                 真实意愿
               </h3>
               {dimensionQuestions.filter(q => q.type === 'ideal').slice(0, 1).map((q) => (
-                <div key={q.id} className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-slate-900 dark:text-white">{q.text}</p>
+                <div key={q.id} className="mb-4 p-4 bg-amber-900/20 rounded-lg">
+                  <p className="text-white">{q.text}</p>
                 </div>
               ))}
             </div>
@@ -460,11 +468,11 @@ export default function QuestionnaireV5Page() {
                       ? dimensionAnswers[`${currentDimension.key}_real_behavior`]?.reality
                       : dimensionAnswers[`${currentDimension.key}_ideal_behavior`]?.ideal
                     ) === option.value
-                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-orange-300 dark:hover:border-orange-600'
+                      ? 'border-amber-500 bg-amber-900/20'
+                      : 'border-slate-600 hover:border-amber-400'
                   }`}
                 >
-                  <span className="font-medium text-slate-900 dark:text-white">{option.label}</span>
+                  <span className="font-medium text-white">{option.label}</span>
                 </button>
               ))}
             </div>
@@ -479,15 +487,15 @@ export default function QuestionnaireV5Page() {
     const question = SCENARIO_QUESTIONS[currentQuestionIndex];
 
     return (
-      <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+      <div className="bg-slate-800/50 backdrop-blur border-2 border-amber-500/30 p-8 rounded-xl">
         <div className="mb-6">
-          <div className="inline-block px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-sm font-medium rounded-full mb-4">
+          <div className="inline-block px-3 py-1 bg-amber-100/10 dark:bg-amber-900/30 text-amber-300 text-sm font-medium rounded-full mb-4">
             {currentQuestionIndex + 1} / {SCENARIO_QUESTIONS.length}
           </div>
-          <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white leading-relaxed mb-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-white leading-relaxed mb-4">
             {question.text}
           </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+          <p className="text-sm text-blue-200 mb-4">
             {question.context}
           </p>
         </div>
@@ -513,11 +521,11 @@ export default function QuestionnaireV5Page() {
               }}
               className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                 scenarioAnswers[question.id] === option.id
-                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-600'
+                  ? 'border-amber-500 bg-amber-900/20'
+                  : 'border-slate-600 hover:border-amber-400'
               }`}
             >
-              <p className="font-medium text-slate-900 dark:text-white">{option.text}</p>
+              <p className="font-medium text-white">{option.text}</p>
             </button>
           ))}
         </div>
@@ -530,19 +538,19 @@ export default function QuestionnaireV5Page() {
     const question = REFLECTION_QUESTIONS[currentQuestionIndex];
 
     return (
-      <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+      <div className="bg-slate-800/50 backdrop-blur border-2 border-amber-500/30 p-8 rounded-xl">
         <div className="mb-6">
-          <div className="inline-block px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium rounded-full mb-4">
+          <div className="inline-block px-3 py-1 bg-amber-100/10 dark:bg-amber-900/30 text-amber-300 text-sm font-medium rounded-full mb-4">
             {currentQuestionIndex + 1} / {REFLECTION_QUESTIONS.length}
           </div>
-          <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white leading-relaxed mb-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-white leading-relaxed mb-4">
             {question.text}
           </h2>
         </div>
 
         {/* 文本输入框 */}
         <textarea
-          className="w-full p-4 border-2 border-slate-200 dark:border-slate-700 rounded-lg focus:border-amber-500 focus:outline-none dark:bg-slate-900 dark:text-white resize-none"
+          className="w-full p-4 border-2 border-amber-500/30 rounded-lg focus:border-amber-400 focus:outline-none bg-slate-900/50 text-white placeholder-blue-300/50 resize-none"
           rows={question.multiline ? 6 : 3}
           placeholder={question.placeholder}
           onChange={(e) => {
@@ -561,7 +569,7 @@ export default function QuestionnaireV5Page() {
                 handleSubmit();
               }
             }}
-            className="flex items-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all font-medium"
           >
             {currentQuestionIndex < REFLECTION_QUESTIONS.length - 1 ? '下一步' : '提交测试'}
             <ArrowRight className="w-5 h-5" />
@@ -573,7 +581,7 @@ export default function QuestionnaireV5Page() {
 
   // 主渲染
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* 顶部导航 */}
         <div className="mb-8">
@@ -592,7 +600,7 @@ export default function QuestionnaireV5Page() {
                 }
               }
             }}
-            className="inline-flex items-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-4 transition-colors"
+            className="inline-flex items-center text-blue-200 hover:text-white mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             返回
@@ -616,10 +624,10 @@ export default function QuestionnaireV5Page() {
           {/* Section进度条 */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-blue-200">
                 测试进度
               </span>
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-blue-200">
                 {sections.findIndex(s => s.id === currentSection) + 1} / {sections.length}
               </span>
             </div>
@@ -630,9 +638,9 @@ export default function QuestionnaireV5Page() {
                   <div
                     key={section.id}
                     className={`flex-1 h-2 rounded-full transition-all ${
-                      status === 'completed' ? 'bg-blue-600' :
-                      status === 'active' ? 'bg-blue-500' :
-                      'bg-slate-200 dark:bg-slate-700'
+                      status === 'completed' ? 'bg-amber-500' :
+                      status === 'active' ? 'bg-amber-400' :
+                      'bg-slate-700'
                     }`}
                   />
                 );
@@ -643,11 +651,11 @@ export default function QuestionnaireV5Page() {
           {/* 当前Section标题 */}
           <div className="flex items-center gap-3 mb-2">
             {sections.find(s => s.id === currentSection)?.icon}
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-2xl md:text-3xl font-bold text-white">
               {sections.find(s => s.id === currentSection)?.title}
             </h1>
           </div>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-blue-200">
             {QUESTIONNAIRE_META.sections.find(s => s.id === currentSection)?.description}
           </p>
         </div>

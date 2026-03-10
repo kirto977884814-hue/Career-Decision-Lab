@@ -205,7 +205,7 @@ export default function WelcomePage() {
         {/* CTA Section */}
         <div className="text-center space-y-6">
           <Link
-            href="/questionnaire-v5"
+            href="/questionnaire-v5/intro"
             className="inline-flex items-center gap-3 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-slate-900 font-bold px-10 py-5 rounded-2xl transition-all shadow-xl hover:shadow-2xl hover:scale-105 text-xl"
           >
             <LighthouseIconSmall />

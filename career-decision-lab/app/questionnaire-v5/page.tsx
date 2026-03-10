@@ -52,6 +52,7 @@ export default function QuestionnaireV5Page() {
   const [scenarioAnswers, setScenarioAnswers] = useState<Record<string, string>>({});
   const [reflectionAnswers, setReflectionAnswers] = useState<Record<string, string>>({});
   const [tipDismissed, setTipDismissed] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // 加载进度和提示状态
   useEffect(() => {
@@ -118,6 +119,23 @@ export default function QuestionnaireV5Page() {
     const currentIndex = sections.findIndex(s => s.id === sectionId);
     const activeIndex = sections.findIndex(s => s.id === currentSection);
     return currentIndex < activeIndex ? 'completed' : 'pending';
+  };
+
+  // 计算总体进度百分比
+  const calculateOverallProgress = (): number => {
+    const sectionIndex = sections.findIndex(s => s.id === currentSection);
+    let questionsInCompletedSections = 0;
+
+    // 已完成的section的所有题目
+    for (let i = 0; i < sectionIndex; i++) {
+      questionsInCompletedSections += sections[i].questionCount;
+    }
+
+    // 当前section的进度
+    const currentQuestionNumber = currentQuestionIndex + 1;
+    const totalQuestions = sections.reduce((sum, s) => sum + s.questionCount, 0);
+
+    return Math.round(((questionsInCompletedSections + currentQuestionNumber) / totalQuestions) * 100);
   };
 
   // 保存进度
@@ -251,7 +269,7 @@ export default function QuestionnaireV5Page() {
                       setCurrentSection('motivation');
                       setCurrentQuestionIndex(0);
                     }
-                  }, 300);
+                  }, 500); // 增加到500ms，给用户更多时间看到选择反馈
                 }}
                 className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                   (basicInfo as any)[question.type] === option.value
@@ -298,6 +316,14 @@ export default function QuestionnaireV5Page() {
           </button>
           <button
             onClick={() => {
+              // 验证必填项
+              if (question.required && !(basicInfo as any)[question.type]) {
+                setValidationError('此题为必填项，请先完成');
+                setTimeout(() => setValidationError(null), 2000);
+                return;
+              }
+              setValidationError(null);
+
               if (currentQuestionIndex < BASIC_INFO_QUESTIONS.length - 1) {
                 setCurrentQuestionIndex(currentQuestionIndex + 1);
               } else {
@@ -312,6 +338,13 @@ export default function QuestionnaireV5Page() {
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>
+
+        {/* 验证错误提示 */}
+        {validationError && (
+          <div className="mt-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg animate-pulse">
+            <p className="text-sm text-red-300 text-center">{validationError}</p>
+          </div>
+        )}
       </div>
     );
   };
@@ -337,45 +370,63 @@ export default function QuestionnaireV5Page() {
         {/* 选项 */}
         {question.options && (
           <div className="space-y-3">
-            {question.options.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  let newValue: string | string[];
-                  if (question.type === 'coreValues') {
-                    // 核心价值观多选排序
-                    const current = (motivationAnswers[question.id] || []) as string[];
-                    if (current.includes(option.value)) {
-                      newValue = current.filter(v => v !== option.value);
-                    } else if (current.length < 3) {
-                      newValue = [...current, option.value];
+            {/* 多选题的提示 */}
+            {question.type === 'coreValues' && (
+              <div className="mb-3 px-4 py-2 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                <p className="text-sm text-amber-300">
+                  💡 请选择最重要的3项价值观（已选 <span className="font-bold">{(motivationAnswers[question.id] as string[])?.length || 0}</span> / 3）
+                </p>
+              </div>
+            )}
+
+            {question.options.map((option) => {
+              const isSelected = Array.isArray(motivationAnswers[question.id])
+                ? (motivationAnswers[question.id] as string[]).includes(option.value)
+                : motivationAnswers[question.id] === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    let newValue: string | string[];
+                    if (question.type === 'coreValues') {
+                      // 核心价值观多选排序
+                      const current = (motivationAnswers[question.id] || []) as string[];
+                      if (current.includes(option.value)) {
+                        newValue = current.filter(v => v !== option.value);
+                      } else if (current.length < 3) {
+                        newValue = [...current, option.value];
+                      } else {
+                        return; // 最多选3个
+                      }
                     } else {
-                      return; // 最多选3个
+                      newValue = option.value;
                     }
-                  } else {
-                    newValue = option.value;
-                  }
-                  setMotivationAnswers({ ...motivationAnswers, [question.id]: newValue });
-                  saveCurrentProgress();
-                }}
-                className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                  Array.isArray(motivationAnswers[question.id])
-                    ? (motivationAnswers[question.id] as string[]).includes(option.value)
+                    setMotivationAnswers({ ...motivationAnswers, [question.id]: newValue });
+                    saveCurrentProgress();
+                  }}
+                  className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                    isSelected
                       ? 'border-amber-500 bg-amber-900/20'
-                      : 'border-slate-600'
-                    : motivationAnswers[question.id] === option.value
-                    ? 'border-amber-500 bg-amber-900/20'
-                    : 'border-slate-600'
-                } hover:border-amber-400`}
-              >
-                <div className="flex items-start gap-3">
-                  <span className="font-medium text-white">{option.label}</span>
-                  {option.description && (
-                    <p className="text-sm text-blue-200 mt-1">{option.description}</p>
-                  )}
-                </div>
-              </button>
-            ))}
+                      : 'border-slate-600 hover:border-amber-400'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      isSelected ? 'border-amber-500 bg-amber-500' : 'border-slate-500'
+                    }`}>
+                      {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
+                    </div>
+                    <div className="flex-1">
+                      <span className="font-medium text-white">{option.label}</span>
+                      {option.description && (
+                        <p className="text-sm text-blue-200 mt-1">{option.description}</p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -439,112 +490,110 @@ export default function QuestionnaireV5Page() {
     const dimensionQuestions = DIMENSION_QUESTIONS.filter(q => q.dimension === currentDimension.key);
 
     return (
-      <div className="space-y-6">
-        {/* 现实行为题 */}
-        <div className="bg-slate-800/50 backdrop-blur border-2 border-amber-500/30 p-8 rounded-xl">
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="inline-block px-3 py-1 bg-amber-100/10 dark:bg-amber-900/30 text-amber-300 text-sm font-medium rounded-full">
-                {currentDimension.key} 维度
-              </div>
-              <span className="text-sm text-blue-200">
-                ({Math.floor(currentQuestionIndex / 2) + 1} / 6)
+      <div className="bg-slate-800/50 backdrop-blur border-2 border-amber-500/30 p-8 rounded-xl">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="inline-block px-3 py-1 bg-amber-100/10 dark:bg-amber-900/30 text-amber-300 text-sm font-medium rounded-full">
+              {currentDimension.key} 维度
+            </div>
+            <span className="text-sm text-blue-200">
+              ({Math.floor(currentQuestionIndex / 2) + 1} / 6)
+            </span>
+          </div>
+
+          <h3 className="text-xl md:text-2xl font-semibold text-white leading-relaxed mb-2">
+            {currentDimension.name}评估
+          </h3>
+          <p className="text-sm text-blue-200 mb-6">
+            请根据你的{isRealityQuestion ? '实际情况' : '真实意愿'}选择最符合的描述
+          </p>
+
+          {/* 当前问题显示 */}
+          <div className="mb-6 p-5 bg-slate-900/50 rounded-lg border border-blue-500/20">
+            <div className="flex items-start gap-2 mb-2">
+              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                isRealityQuestion ? 'bg-blue-900/50 text-blue-300' : 'bg-amber-900/50 text-amber-300'
+              }`}>
+                {isRealityQuestion ? '📊 现实行为' : '💭 真实意愿'}
               </span>
             </div>
+            <p className="text-white text-lg leading-relaxed">
+              {isRealityQuestion
+                ? dimensionQuestions.find(q => q.type === 'reality')?.text
+                : dimensionQuestions.find(q => q.type === 'ideal')?.text
+              }
+            </p>
+          </div>
+        </div>
 
-            {/* 现实行为题 */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-blue-300 mb-3">
-                现实行为
-              </h3>
-              {dimensionQuestions.filter(q => q.type === 'reality').slice(0, 1).map((q) => (
-                <div key={q.id} className="mb-4 p-4 bg-slate-900/50 rounded-lg">
-                  <p className="text-white">{q.text}</p>
-                </div>
-              ))}
-            </div>
+        {/* Likert选项 */}
+        <div className="space-y-2">
+          {LIKERT_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                const questionId = isRealityQuestion
+                  ? `${currentDimension.key}_real_behavior`
+                  : `${currentDimension.key}_ideal_behavior`;
 
-            {/* 真实意愿题 */}
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-amber-300 mb-3">
-                真实意愿
-              </h3>
-              {dimensionQuestions.filter(q => q.type === 'ideal').slice(0, 1).map((q) => (
-                <div key={q.id} className="mb-4 p-4 bg-amber-900/20 rounded-lg">
-                  <p className="text-white">{q.text}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Likert选项 */}
-            <div className="space-y-2">
-              {LIKERT_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    const questionId = isRealityQuestion
-                      ? `${currentDimension.key}_real_behavior`
-                      : `${currentDimension.key}_ideal_behavior`;
-
-                    // 更新答案
-                    if (isRealityQuestion) {
-                      setDimensionAnswers({
-                        ...dimensionAnswers,
-                        [questionId]: {
-                          ...(dimensionAnswers[questionId] || { reality: 0, ideal: 0 }),
-                          reality: option.value
-                        }
-                      });
-                    } else {
-                      setDimensionAnswers({
-                        ...dimensionAnswers,
-                        [questionId]: {
-                          ...(dimensionAnswers[questionId] || { reality: 0, ideal: 0 }),
-                          ideal: option.value
-                        }
-                      });
+                // 更新答案
+                if (isRealityQuestion) {
+                  setDimensionAnswers({
+                    ...dimensionAnswers,
+                    [questionId]: {
+                      ...(dimensionAnswers[questionId] || { reality: 0, ideal: 0 }),
+                      reality: option.value
                     }
+                  });
+                } else {
+                  setDimensionAnswers({
+                    ...dimensionAnswers,
+                    [questionId]: {
+                      ...(dimensionAnswers[questionId] || { reality: 0, ideal: 0 }),
+                      ideal: option.value
+                    }
+                  });
+                }
 
-                    saveCurrentProgress();
+                saveCurrentProgress();
 
-                    // 自动跳转到下一题
-                    setTimeout(() => {
-                      const totalDimensionPages = dimensions.length * 2; // 6个维度 × 2题 = 12页
-                      if (currentQuestionIndex < totalDimensionPages - 1) {
-                        setCurrentQuestionIndex(currentQuestionIndex + 1);
-                      } else {
-                        setCurrentSection('scenarios');
-                        setCurrentQuestionIndex(0);
-                      }
-                    }, 200);
-                  }}
-                  className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                    (isRealityQuestion
-                      ? dimensionAnswers[`${currentDimension.key}_real_behavior`]?.reality
-                      : dimensionAnswers[`${currentDimension.key}_ideal_behavior`]?.ideal
-                    ) === option.value
-                      ? 'border-amber-500 bg-amber-900/20'
-                      : 'border-slate-600 hover:border-amber-400'
-                  }`}
-                >
-                  <span className="font-medium text-white">{option.label}</span>
-                </button>
-              ))}
-            </div>
+                // 自动跳转到下一题
+                setTimeout(() => {
+                  const totalDimensionPages = dimensions.length * 2; // 6个维度 × 2题 = 12页
+                  if (currentQuestionIndex < totalDimensionPages - 1) {
+                    setCurrentQuestionIndex(currentQuestionIndex + 1);
+                  } else {
+                    setCurrentSection('scenarios');
+                    setCurrentQuestionIndex(0);
+                  }
+                }, 400);
+              }}
+              className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                (isRealityQuestion
+                  ? dimensionAnswers[`${currentDimension.key}_real_behavior`]?.reality
+                  : dimensionAnswers[`${currentDimension.key}_ideal_behavior`]?.ideal
+                ) === option.value
+                  ? 'border-amber-500 bg-amber-900/20'
+                  : 'border-slate-600 hover:border-amber-400'
+              }`}
+            >
+              <span className="font-medium text-white text-lg">{option.label}</span>
+            </button>
+          ))}
+        </div>
 
-            {/* 导航按钮 */}
-            <div className="mt-6 flex justify-between">
-              <button
-                onClick={handlePrevious}
-                className="flex items-center gap-2 px-6 py-3 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-all font-medium"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                上一题
-              </button>
-              <div className="text-sm text-blue-300">
-                选择选项后自动跳转
-              </div>
-            </div>
+        {/* 导航按钮 */}
+        <div className="mt-6 flex justify-between">
+          <button
+            onClick={handlePrevious}
+            className="flex items-center gap-2 px-6 py-3 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-all font-medium"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            上一题
+          </button>
+          <div className="text-sm text-blue-300 flex items-center gap-2">
+            <span>选择选项后自动跳转</span>
+            <span className="text-amber-300">({isRealityQuestion ? '第1题' : '第2题'})</span>
           </div>
         </div>
       </div>
@@ -653,6 +702,14 @@ export default function QuestionnaireV5Page() {
           </button>
           <button
             onClick={() => {
+              // 验证必填项
+              if (question.required && !reflectionAnswers[question.id]?.trim()) {
+                setValidationError('此题为必填项，请先填写');
+                setTimeout(() => setValidationError(null), 2000);
+                return;
+              }
+              setValidationError(null);
+
               if (currentQuestionIndex < REFLECTION_QUESTIONS.length - 1) {
                 setCurrentQuestionIndex(currentQuestionIndex + 1);
               } else {
@@ -665,6 +722,13 @@ export default function QuestionnaireV5Page() {
             <ArrowRight className="w-5 h-5" />
           </button>
         </div>
+
+        {/* 验证错误提示 */}
+        {validationError && (
+          <div className="mt-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg animate-pulse">
+            <p className="text-sm text-red-300 text-center">{validationError}</p>
+          </div>
+        )}
       </div>
     );
   };
@@ -673,82 +737,64 @@ export default function QuestionnaireV5Page() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="container mx-auto px-4 py-12 max-w-4xl">
-        {/* 顶部导航 */}
-        <div className="mb-8">
-          <button
-            onClick={() => {
-              if (currentSection === 'basic' && currentQuestionIndex === 0) {
-                router.push('/');
-              } else if (currentQuestionIndex > 0) {
-                setCurrentQuestionIndex(currentQuestionIndex - 1);
-              } else {
-                // 返回上一个section
-                const currentIndex = sections.findIndex(s => s.id === currentSection);
-                if (currentIndex > 0) {
-                  setCurrentSection(sections[currentIndex - 1].id);
-                  setCurrentQuestionIndex(0);
-                }
-              }
-            }}
-            className="inline-flex items-center text-blue-200 hover:text-white mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            返回
-          </button>
-
-          {/* 温馨提示 - 仅在基础信息第一题时显示 */}
-          {!tipDismissed && currentSection === 'basic' && currentQuestionIndex === 0 && (
-            <div className="mb-6">
-              <QuestionnaireTip variant="full" onDismiss={handleDismissTip} />
-            </div>
-          )}
-
-          {/* 页面标题 */}
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <LighthouseIconSmall className="text-amber-400" />
-            <h1 className="text-2xl md:text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-400">
-              开始你的灯塔之旅
-            </h1>
+        {/* 温馨提示 - 仅在基础信息第一题时显示 */}
+        {!tipDismissed && currentSection === 'basic' && currentQuestionIndex === 0 && (
+          <div className="mb-6">
+            <QuestionnaireTip variant="full" onDismiss={handleDismissTip} />
           </div>
+        )}
 
-          {/* Section进度条 */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-blue-200">
-                测试进度
-              </span>
-              <span className="text-sm font-medium text-blue-200">
-                {sections.findIndex(s => s.id === currentSection) + 1} / {sections.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {sections.map((section, index) => {
-                const status = getSectionStatus(section.id);
-                return (
-                  <div
-                    key={section.id}
-                    className={`flex-1 h-2 rounded-full transition-all ${
-                      status === 'completed' ? 'bg-amber-500' :
-                      status === 'active' ? 'bg-amber-400' :
-                      'bg-slate-700'
-                    }`}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 当前Section标题 */}
-          <div className="flex items-center gap-3 mb-2">
-            {sections.find(s => s.id === currentSection)?.icon}
-            <h1 className="text-2xl md:text-3xl font-bold text-white">
-              {sections.find(s => s.id === currentSection)?.title}
-            </h1>
-          </div>
-          <p className="text-blue-200">
-            {QUESTIONNAIRE_META.sections.find(s => s.id === currentSection)?.description}
-          </p>
+        {/* 页面标题 */}
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <LighthouseIconSmall className="text-amber-400" />
+          <h1 className="text-2xl md:text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-amber-400">
+            开始你的灯塔之旅
+          </h1>
         </div>
+
+        {/* Section进度条 */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-blue-200">
+              测试进度
+            </span>
+            <span className="text-sm font-medium text-amber-300">
+              {calculateOverallProgress()}%
+            </span>
+          </div>
+          <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-amber-500/30">
+            <div
+              className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${calculateOverallProgress()}%` }}
+            />
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            {sections.map((section, index) => {
+              const status = getSectionStatus(section.id);
+              return (
+                <div
+                  key={section.id}
+                  className={`flex-1 h-1.5 rounded-full transition-all ${
+                    status === 'completed' ? 'bg-amber-500' :
+                    status === 'active' ? 'bg-amber-400' :
+                    'bg-slate-700'
+                  }`}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 当前Section标题 */}
+        <div className="flex items-center gap-3 mb-2">
+          {sections.find(s => s.id === currentSection)?.icon}
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
+            {sections.find(s => s.id === currentSection)?.title}
+          </h1>
+        </div>
+        <p className="text-blue-200 mb-6">
+          {QUESTIONNAIRE_META.sections.find(s => s.id === currentSection)?.description}
+        </p>
 
         {/* 问题内容 */}
         {currentSection === 'basic' && renderBasicInfo()}
